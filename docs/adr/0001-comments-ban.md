@@ -7,7 +7,7 @@ Date: 2026-09-26
 
 POLAR-1141 (port of platform ADR 0014 / POLAR-1106): files this repo authors carry no code
 comments. Comments are unchecked prose: nothing parses them, nothing tests them, and they
-rot on the exact lines that change most. The seeded baseline records 1,904 comments across
+rot on the exact lines that change most. The seeded baseline records 1,908 comments across
 99 of the linted source files. Every job a comment does has a home that is checked: a
 reason belongs in an ADR or the PR body, an edge case belongs in a test name, history
 belongs in commits and Linear, and agent guidance belongs in AGENTS.md. Code that cannot
@@ -20,15 +20,19 @@ carry a comment has to be written so it does not need one.
   alike, one count each. A `#!` shebang parses as a `Shebang` comment token but is a file
   directive, not a comment, and is the only exemption.
 - `scripts/ci/comments.mjs` counts comments through real parsers, never regex over source
-  text: ESLint (espree for JS, typescript-eslint for TS/TSX) for
-  `*.{js,mjs,cjs,ts,tsx}`, postcss for `*.css`, and parse5 for `*.html`. HTML files are
-  counted recursively: parse5 comment nodes, plus the bodies of classic `<script>`
-  elements fed back through ESLint and `<style>` bodies through postcss, so a comment
-  cannot hide inside an inline block. Non-JS script types (`application/json` and kin)
-  are data and are not parsed. A file that does not parse fails the gate closed instead
-  of reading as zero (parse5 error-corrects the markup itself, so it has no fatal path).
-  The ESLint pass runs with `linterOptions.noInlineConfig`, so an `eslint-disable`
-  comment cannot launder a count and counts as a comment while it tries.
+  text: ESLint (espree for JS/JSX, typescript-eslint for TS/MTS/CTS) for
+  `*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}`, postcss for `*.css`, and parse5 for `*.html`. HTML
+  files are counted recursively: parse5 comment nodes (including `<template>` content
+  fragments), the bodies of `<script>` elements whose type is a JavaScript MIME essence
+  (parameters like `;charset=` stripped) fed back through ESLint, `<style>` bodies and
+  `style=` attributes through postcss, and `on*=` event-handler attributes through
+  ESLint, so a comment cannot hide inside an inline block. Non-JS script types
+  (`application/json` and kin) are data and are not parsed, and so are `data-*` and other
+  non-code attributes. A file that does not parse
+  fails the gate closed instead of reading as zero (parse5 error-corrects the markup
+  itself, so it has no fatal path). The ESLint pass runs with
+  `linterOptions.noInlineConfig`, so an `eslint-disable` comment cannot launder a count
+  and counts as a comment while it tries.
 - The rule is `error` in `eslint.config.mjs` for every authored JS/TS file, less the
   config's ignores (node_modules, `dist`, `build`, `build-rel`, `.next`, `coverage`,
   caches and generated snapshot/parity output), which is what the ratchet mirrors.

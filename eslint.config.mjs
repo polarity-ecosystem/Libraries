@@ -29,20 +29,24 @@ export default [
     ],
   },
   {
-    files: ['**/*.{js,mjs,cjs,ts,tsx}'],
+    files: ['**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}'],
     plugins: { polarity: polarityPlugin },
     linterOptions: { noInlineConfig: true },
     rules: { 'polarity/no-comments': 'error' },
   },
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{js,mjs,cjs,jsx}'],
+    languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+  },
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
     languageOptions: { parser: tseslint.parser },
   },
   ...(Object.keys(commentsBaseline).length
     ? [
         {
           files: Object.keys(commentsBaseline)
-            .filter((f) => /\.(js|mjs|cjs|ts|tsx)$/.test(f))
+            .filter((f) => /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts)$/.test(f))
             .map((f) => f.replace(/[\\[\]{}()*?!|,+@^$]/g, '\\$&')),
           rules: { 'polarity/no-comments': 'off' },
         },

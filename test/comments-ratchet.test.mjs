@@ -95,6 +95,45 @@ test('an inline script that does not parse fails closed, not silently', async ()
   assert.match(fatals[0], /index\.html/);
 });
 
+test('comments inside a template element count; parse5 stores them under content', async () => {
+  const { count, fatals } = await countInText(
+    '<template><div><!-- inside template --></div></template>\n',
+    'index.html',
+  );
+  assert.deepEqual(fatals, []);
+  assert.equal(count, 1);
+});
+
+test('comments inside event-handler and style attributes count through the js and css parsers', async () => {
+  const { count, fatals } = await countInText(
+    '<button onclick="save(); // handle">go</button><p style="color: red; /* tint */">x</p>\n',
+    'index.html',
+  );
+  assert.deepEqual(fatals, []);
+  assert.equal(count, 2);
+});
+
+test('a script type with parameters still counts; the mime essence is what matters', async () => {
+  const { count, fatals } = await countInText(
+    '<script type="text/javascript; charset=utf-8">// inside\nvar x = 1;</script>\n',
+    'index.html',
+  );
+  assert.deepEqual(fatals, []);
+  assert.equal(count, 1);
+});
+
+test('jsx, mts and cts sources count comments through their parsers', async () => {
+  const jsx = await countInText('export const c = <div />; // ui\n', 'x.jsx');
+  const mts = await countInText('const n: number = 1; // typed\n', 'x.mts');
+  const cts = await countInText('const n: number = 1; /* typed */\n', 'x.cts');
+  assert.equal(jsx.count, 1);
+  assert.equal(mts.count, 1);
+  assert.equal(cts.count, 1);
+  assert.deepEqual(jsx.fatals, []);
+  assert.deepEqual(mts.fatals, []);
+  assert.deepEqual(cts.fatals, []);
+});
+
 test('a comment added to a clean file fails the gate as a new file', async () => {
   const { count } = await countInText('export const a = 1;\n// why\n', 'new.js');
   assert.equal(count, 1);

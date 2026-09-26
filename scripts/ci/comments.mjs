@@ -13,11 +13,31 @@ import { compare, initBaseline, readBaseline, shrink, writeBaseline } from './ra
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BASELINE = join(ROOT, 'scripts', 'ci', 'comments.baseline.json');
-const JSLIKE = /\.(js|mjs|cjs|ts|tsx)$/;
+const JSLIKE = /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts)$/;
 const CSS = /\.css$/;
 const HTML = /\.html?$/;
-const SOURCE = /\.(js|mjs|cjs|ts|tsx|css|html?)$/;
-const JS_SCRIPT_TYPES = new Set(['', 'text/javascript', 'application/javascript', 'module']);
+const SOURCE = /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts|css|html?)$/;
+const JS_SCRIPT_TYPES = new Set([
+  '',
+  'module',
+  'application/ecmascript',
+  'application/javascript',
+  'application/x-ecmascript',
+  'application/x-javascript',
+  'text/ecmascript',
+  'text/javascript',
+  'text/jscript',
+  'text/livescript',
+  'text/x-ecmascript',
+  'text/x-javascript',
+  'text/javascript1.0',
+  'text/javascript1.1',
+  'text/javascript1.2',
+  'text/javascript1.3',
+  'text/javascript1.4',
+  'text/javascript1.5',
+]);
+const EVENT_HANDLER_ATTR = /^on[a-z]+$/;
 const RULE = 'polarity/no-comments';
 const ADR = 'docs/adr/0001-comments-ban.md';
 
@@ -36,12 +56,20 @@ function commentsConfig() {
   return [
     ignoresBlock,
     {
-      files: ['**/*.{js,mjs,cjs,ts,tsx}'],
+      files: ['**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}'],
       plugins: { polarity },
       linterOptions: { noInlineConfig: true },
       rules: { [RULE]: 'error' },
     },
-    { files: ['**/*.{ts,tsx}'], languageOptions: { parser: tseslint.parser } },
+    {
+      files: ['**/*.{js,mjs,cjs,jsx}'],
+      languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+    },
+    {
+      files: ['**/*.{ts,tsx,mts,cts}'],
+      languageOptions: { parser: tseslint.parser },
+    },
+    { files: ['**/*.{css,html,htm}'] },
   ];
 }
 
@@ -91,13 +119,21 @@ async function countHtmlFile(text, file, linter) {
     if (node.nodeName === '#comment') count += 1;
     if (node.tagName === 'script') {
       const type = ((node.attrs ?? []).find((a) => a.name === 'type')?.value ?? '')
+        .split(';')[0]
         .trim()
         .toLowerCase();
       if (JS_SCRIPT_TYPES.has(type)) scripts.push(elementText(node));
     } else if (node.tagName === 'style') {
       styles.push(elementText(node));
     }
+    for (const attr of node.attrs ?? []) {
+      const name = attr.name.toLowerCase();
+      if (name === 'style') styles.push(`x { ${attr.value} }`);
+      else if (EVENT_HANDLER_ATTR.test(name) && attr.value.trim())
+        scripts.push(`function __handler__() {\n${attr.value}\n}`);
+    }
     for (const child of node.childNodes ?? []) walk(child);
+    if (node.content) walk(node.content);
   };
   walk(parseHtml(text));
   for (const [i, body] of scripts.entries()) {
@@ -123,6 +159,7 @@ async function scan() {
   );
   for (const file of tracked) {
     if (JSLIKE.test(file)) continue;
+    if (await linter.isPathIgnored(file)) continue;
     const text = readFileSync(join(ROOT, file), 'utf8');
     const result = CSS.test(file)
       ? countCss(text, file)
