@@ -79,6 +79,15 @@ test('comments inside inline script and style bodies count through the js and cs
   assert.equal(count, 2);
 });
 
+test('module with parameters is a data block per the spec, not a module script', async () => {
+  const { count, fatals } = await countInText(
+    '<script type="module; charset=utf-8">{ "a": "// json" }</script>\n',
+    'index.html',
+  );
+  assert.deepEqual(fatals, []);
+  assert.equal(count, 0);
+});
+
 test('a non-js script type is data, not code; its body is not counted or parsed', async () => {
   const { count, fatals } = await countInText(
     '<script type="application/json">{ "a": "// not a comment" }</script>\n',

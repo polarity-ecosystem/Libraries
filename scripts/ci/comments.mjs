@@ -17,9 +17,8 @@ const JSLIKE = /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts)$/;
 const CSS = /\.css$/;
 const HTML = /\.html?$/;
 const SOURCE = /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts|css|html?)$/;
-const JS_SCRIPT_TYPES = new Set([
+const JS_MIME_ESSENCES = new Set([
   '',
-  'module',
   'application/ecmascript',
   'application/javascript',
   'application/x-ecmascript',
@@ -119,10 +118,10 @@ async function countHtmlFile(text, file, linter) {
     if (node.nodeName === '#comment') count += 1;
     if (node.tagName === 'script') {
       const type = ((node.attrs ?? []).find((a) => a.name === 'type')?.value ?? '')
-        .split(';')[0]
         .trim()
         .toLowerCase();
-      if (JS_SCRIPT_TYPES.has(type)) scripts.push(elementText(node));
+      const essence = type.split(';')[0].trim();
+      if (type === 'module' || JS_MIME_ESSENCES.has(essence)) scripts.push(elementText(node));
     } else if (node.tagName === 'style') {
       styles.push(elementText(node));
     }
