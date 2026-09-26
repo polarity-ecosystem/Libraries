@@ -43,6 +43,11 @@ npm run build:site-orbs
 npm run typecheck               # every workspace
 ```
 
+`npm run check` (typecheck, the comments ratchet and the test suite) must pass
+before pushing; `git config core.hooksPath .githooks` installs the pre-push hook
+that runs it. Files this repo authors carry no code comments; see
+`docs/adr/0001-comments-ban.md`.
+
 ## Releasing
 
 Publishing is per package, triggered by a GitHub release (`publish.yml`),

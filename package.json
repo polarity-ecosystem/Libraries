@@ -14,6 +14,16 @@
     "build:site-beam": "npm run build:beam && npm run build -w @sites/beam",
     "build:site-gooey": "npm run build:gooey && npm run build -w @sites/gooey",
     "build:site-orbs": "npm run build:orbs && npm run build -w @sites/orbs",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "comments": "node scripts/ci/comments.mjs",
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "check": "npm run typecheck && npm run comments && npm run test"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "parse5": "^8.0.1",
+    "postcss": "^8.5.28",
+    "typescript-eslint": "^8.70.1"
   }
 }
