@@ -21,7 +21,11 @@ carry a comment has to be written so it does not need one.
   directive, not a comment, and is the only exemption.
 - `scripts/ci/comments.mjs` counts comments through real parsers, never regex over source
   text: ESLint (espree for JS/JSX, typescript-eslint for TS/MTS/CTS) for
-  `*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}`, postcss for `*.css`, and parse5 for `*.html`. HTML
+  `*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}`, postcss for `*.css`, and parse5 for `*.html`. The
+  postcss count comes from its tokenizer, not an AST walk, because postcss keeps a comment
+  inside a declaration value, a selector or an at-rule parameter as raw text on the parent
+  node: `a { color: /* x */ red }` is one comment the walk cannot see. `postcss.parse`
+  still runs first so a stylesheet that does not parse fails closed. HTML
   files are counted recursively: parse5 comment nodes (including `<template>` content
   fragments), the bodies of `<script>` elements whose type is a JavaScript MIME essence
   (parameters like `;charset=` stripped) fed back through ESLint, `<style>` bodies and

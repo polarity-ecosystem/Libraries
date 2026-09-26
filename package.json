@@ -17,7 +17,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "comments": "node scripts/ci/comments.mjs",
-    "test": "node --test \"test/**/*.test.mjs\"",
+    "test": "node --test test/*.test.mjs",
     "check": "npm run typecheck && npm run comments && npm run test"
   },
   "devDependencies": {

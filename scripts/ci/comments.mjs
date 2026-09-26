@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 import tseslint from 'typescript-eslint';
 import postcss from 'postcss';
+import Input from 'postcss/lib/input';
+import tokenize from 'postcss/lib/tokenize';
 import { parse as parseHtml } from 'parse5';
 import repoConfig from '../../eslint.config.mjs';
 import polarity from '../eslint-plugin-polarity.mjs';
@@ -96,11 +98,12 @@ async function countJs(text, filePath, linter) {
 
 function countCss(text, file) {
   try {
-    const root = postcss.parse(text, { from: file });
+    postcss.parse(text, { from: file });
+    const tokenizer = tokenize(new Input(text));
     let count = 0;
-    root.walk((node) => {
-      if (node.type === 'comment') count += 1;
-    });
+    while (!tokenizer.endOfFile()) {
+      if (tokenizer.nextToken()[0] === 'comment') count += 1;
+    }
     return { count, fatals: [] };
   } catch (err) {
     return { count: 0, fatals: [`${file}: ${err.message}`] };

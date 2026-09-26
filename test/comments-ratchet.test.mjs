@@ -54,6 +54,42 @@ test('css comments count through the postcss parser; comment-shaped strings do n
   assert.equal(count, 1);
 });
 
+test('a comment inside a declaration value counts; postcss keeps it in the raw value, the tokenizer still sees it', async () => {
+  const { count, fatals } = await countInText('a { color: /* hidden */ red; }\n', 'hidden.css');
+  assert.deepEqual(fatals, []);
+  assert.equal(count, 1);
+});
+
+test('a comment inside a selector counts', async () => {
+  const { count, fatals } = await countInText('a /* sel */ b { x: y; }\n', 'sel.css');
+  assert.deepEqual(fatals, []);
+  assert.equal(count, 1);
+});
+
+test('a comment inside an at-rule parameter counts', async () => {
+  const { count, fatals } = await countInText(
+    '@media /* p */ screen { a { x: y; } }\n',
+    'param.css',
+  );
+  assert.deepEqual(fatals, []);
+  assert.equal(count, 1);
+});
+
+test('an embedded style counts a hidden declaration comment, a selector comment and an at-rule-param comment', async () => {
+  const decl = await countInText('<style>a { color: /* hidden */ red; }</style>\n', 'index.html');
+  const sel = await countInText('<style>a /* sel */ b { x: y; }</style>\n', 'index.html');
+  const param = await countInText(
+    '<style>@media /* p */ screen { a { x: y; } }</style>\n',
+    'index.html',
+  );
+  assert.equal(decl.count, 1);
+  assert.equal(sel.count, 1);
+  assert.equal(param.count, 1);
+  assert.deepEqual(decl.fatals, []);
+  assert.deepEqual(sel.fatals, []);
+  assert.deepEqual(param.fatals, []);
+});
+
 test('a stylesheet that does not parse surfaces a fatal so the gate fails closed', async () => {
   const { count, fatals } = await countInText('/* never closed\na { x: y; }\n', 'bad.css');
   assert.equal(count, 0);
